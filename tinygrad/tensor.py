@@ -2151,6 +2151,28 @@ class Tensor(SimpleMathTrait):  # pylint: disable=abstract-method
     def fix(x:Tensor): return x.flatten(start_dim=-2)[..., -s:].transpose(axis,-1)
     return fix(ret) + fix(base_add)
 
+  def associative_scan(self, op:str, axis:int=0) -> Tensor:
+    """
+    Applies an associative operation over the tensor along the specified axis.
+
+    You can pass in the `axis` keyword argument to control the axis along which the operation is computed.
+
+    ```python exec="true" source="above" session="tensor" result="python"
+    t = Tensor([[1, 2], [3, 4]])
+    print(t.numpy())
+    ```
+    ```python exec="true" source="above" session="tensor" result="python"
+    print(t.associative_scan("add", 1).numpy())
+    ```
+    """
+    assert op in ("add", "mul", "max", "min"), f"unsupported associative operation {op}"
+    axis = self._resolve_dim(axis)
+    if self.ndim == 0 or 0 in self.shape: return self
+    if op == "add": return self.cumsum(axis)
+    if op == "mul": return self.cumprod(axis)
+    if op == "max": return self.cummax(axis)
+    if op == "min": return self.cummin(axis)
+
   @staticmethod
   def _tri(r:sint, c:sint, diagonal:int=0, **kwargs) -> Tensor:
     assert isinstance(r, int) and isinstance(c, int), f"does not support symbolic, getting {r=}, {c=}"
